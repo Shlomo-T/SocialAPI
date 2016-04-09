@@ -5,25 +5,18 @@ from rest_framework.views import APIView
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from social.backends.google import GoogleOAuth2
-from social.strategies.django_strategy import DjangoStrategy
+from API.AuthHelper import Helper
 import urllib
 
 # Create your views here.
-@api_view(['GET', 'POST'])
+@api_view( ['POST'])
 def Auth(request):
-    if request.method == 'POST':
-        data=request.data
+    validate,access_token= Helper.validate_request_body(request)
+    if validate:
+        user,e, alreadyExist= Helper.register_by_access_token(access_token)
 
-        if data['backend']=='google' and data['access_token']!='':
-            ac=data['access_token']
-            #user = Helper.register_by_access_token(ac,GoogleOAuth2())
-            #user=Helper.register_by_access_token_http(ac)
-            strategy= DjangoStrategy(None)
-            backend=GoogleOAuth2(strategy)
-            s=backend.get_scope()
-            uuser= backend.user_data(ac)
-
-        return Response({"message": "Got some data!", "data": request.data})
-    return Response({"message": "Hello, world!"})
+        response=Helper.build_response(user,e,alreadyExist)
+        return Response(response)
+    return Response({"Error": "request is not valid"})
 
 
